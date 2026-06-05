@@ -1,18 +1,25 @@
-using NaughtyAttributes;
 using UnityEngine;
 
-public class MapVariables 
+public class MapVariables
 {
-    public int Seed = 42;
-    public float Scale = 50f;
-    public int Octaves = 8;
-    public float Persistence = 0.426f;
-    public float Lacunarity = 2.18f;
-    public int ChunkX = 2;
-    public int ChunkY = 2;
-    public int LoD = 0;
+    public int Seed;
+    public float Scale;
+    public int Octaves;
+    public float Persistence;
+    public float Lacunarity;
+    public int ChunkX;
+    public int ChunkY;
+    public int LoD;
+    public float ChunkScale;
+    public AnimationCurve HeightCurve;
+    public float HeightMultiplier;
+    public bool ComplexMountains;
+    public float MountainThreshold;
 
-    public MapVariables(int seed, float scale, int octaves, float persistence, float lacunarity, int chunkX, int chunkY, int lod)
+    public MapVariables(int seed, float scale, int octaves, float persistence, float lacunarity,
+                        int chunkX, int chunkY, int lod, float chunkScale,
+                        AnimationCurve heightCurve, float heightMultiplier,
+                        bool complexMountains, float mountainThreshold)
     {
         Seed = seed;
         Scale = scale;
@@ -22,5 +29,10 @@ public class MapVariables
         ChunkX = chunkX;
         ChunkY = chunkY;
         LoD = lod;
+        ChunkScale = chunkScale;
+        HeightCurve = heightCurve;
+        HeightMultiplier = heightMultiplier;
+        ComplexMountains = complexMountains;
+        MountainThreshold = mountainThreshold;
     }
 }

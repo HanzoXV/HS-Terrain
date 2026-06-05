@@ -3,6 +3,7 @@ using UnityEngine;
 public class MapGenerator
 {
     private const int HeightmapSize = 1000;
+    private const int CellsPerChunk = 100;
 
     public Texture2D GeneratePreview(MapVariables variables)
     {
@@ -28,9 +29,6 @@ public class MapGenerator
         return texture;
     }
 
-    // ChunkX * ChunkY chunks are built from origin (0,0).
-    // Each chunk covers exactly 1x1 world unit = (HeightmapSize/HeightmapSize) = 1 cell per chunk.
-    // ChunkX=3, ChunkY=2 -> 3x2 world units of terrain, sampling the first 3x2 cells of the heightmap.
     public GameObject Create(MapVariables variables)
     {
         float[,] heightmap = GenerateHeightmap(variables);
@@ -41,11 +39,11 @@ public class MapGenerator
         {
             for (int cx = 0; cx < variables.ChunkX; cx++)
             {
-                Mesh mesh = BuildChunkMesh(heightmap, cx, cy, variables.LoD);
+                Mesh mesh = BuildChunkMesh(heightmap, cx, cy, variables);
 
                 GameObject chunk = new GameObject($"Chunk_{cx}_{cy}");
                 chunk.transform.SetParent(parent.transform, false);
-                chunk.transform.localPosition = new Vector3(cx, 0f, cy);
+                chunk.transform.localPosition = new Vector3(cx * variables.ChunkScale, 0f, cy * variables.ChunkScale);
 
                 chunk.AddComponent<MeshFilter>().mesh = mesh;
                 chunk.AddComponent<MeshRenderer>().material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
@@ -55,40 +53,62 @@ public class MapGenerator
         return parent;
     }
 
+    public void UpdateChunks(GameObject parent, MapVariables variables)
+    {
+        float[,] heightmap = GenerateHeightmap(variables);
+
+        for (int cy = 0; cy < variables.ChunkY; cy++)
+        {
+            for (int cx = 0; cx < variables.ChunkX; cx++)
+            {
+                string name = $"Chunk_{cx}_{cy}";
+                Transform t = parent.transform.Find(name);
+
+                if (t == null) continue;
+
+                MeshFilter mf = t.GetComponent<MeshFilter>();
+                if (mf != null)
+                    mf.mesh = BuildChunkMesh(heightmap, cx, cy, variables);
+            }
+        }
+    }
+
     private float[,] GenerateHeightmap(MapVariables variables)
     {
         FractalPerlinNoise perlin = new FractalPerlinNoise();
         return perlin.GenerateHeightmap(
             variables.Seed, variables.Scale,
-            variables.Octaves, variables.Persistence, variables.Lacunarity);
+            variables.Octaves, variables.Persistence, variables.Lacunarity,
+            variables.ComplexMountains, variables.MountainThreshold);
     }
 
-    // Each chunk samples exactly 1 cell from the heightmap (originX=cx, originY=cy).
-    // LoD subdivides that cell into a denser mesh for smoother appearance.
-    // vertsPerAxis = 2^LoD + 1, so LoD 0 = 1 quad, LoD 3 = 8x8 quads per chunk.
-    private Mesh BuildChunkMesh(float[,] heightmap, int cx, int cy, int lod)
+    private Mesh BuildChunkMesh(float[,] heightmap, int cx, int cy, MapVariables variables)
     {
-        int quadsPerAxis = (int)Mathf.Pow(2, lod);   // LoD 0=1, 1=2, 2=4, 3=8 quads
+        int maxLod = 6;
+        int quadsPerAxis = (int)Mathf.Pow(2, maxLod - variables.LoD);
         int vertsPerAxis = quadsPerAxis + 1;
-        float step = 1f / quadsPerAxis;         // world-space step between verts (chunk is 1x1)
+        float step = variables.ChunkScale / quadsPerAxis;
 
         Vector3[] vertices = new Vector3[vertsPerAxis * vertsPerAxis];
         Vector2[] uvs = new Vector2[vertices.Length];
         int[] triangles = new int[quadsPerAxis * quadsPerAxis * 6];
 
+        int originX = cx * CellsPerChunk;
+        int originY = cy * CellsPerChunk;
+
         for (int y = 0; y < vertsPerAxis; y++)
         {
             for (int x = 0; x < vertsPerAxis; x++)
             {
-                // Sample heightmap: chunk (cx,cy) starts at heightmap cell (cx, cy)
-                // Sub-verts interpolate to neighbouring cells for smooth LoD
-                float hmXf = cx + x * step;
-                float hmYf = cy + y * step;
+                float hmXf = originX + (x / (float)quadsPerAxis) * CellsPerChunk;
+                float hmYf = originY + (y / (float)quadsPerAxis) * CellsPerChunk;
+
+                float rawHeight = SampleBilinear(heightmap, hmXf, hmYf);
+                float curvedHeight = variables.HeightCurve.Evaluate(rawHeight) * variables.HeightMultiplier;
 
                 int vi = y * vertsPerAxis + x;
-                float h = SampleBilinear(heightmap, hmXf, hmYf);
-                vertices[vi] = new Vector3(x * step, h, y * step);
-                uvs[vi] = new Vector2(x * step, y * step);
+                vertices[vi] = new Vector3(x * step, curvedHeight, y * step);
+                uvs[vi] = new Vector2((float)x / quadsPerAxis, (float)y / quadsPerAxis);
             }
         }
 
@@ -117,7 +137,6 @@ public class MapGenerator
         return mesh;
     }
 
-    // Bilinear sample so sub-cell LoD verts interpolate smoothly between heightmap cells
     private float SampleBilinear(float[,] map, float x, float y)
     {
         int maxX = map.GetLength(0) - 1;

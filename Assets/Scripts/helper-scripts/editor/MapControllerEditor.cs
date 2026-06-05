@@ -1,15 +1,13 @@
-// Place this file in any Editor/ folder (e.g. Assets/Editor/MapControllerEditor.cs)
 using UnityEngine;
 using UnityEditor;
 
 [CustomEditor(typeof(MapController))]
 public class MapControllerEditor : Editor
 {
-    // Only the fields we draw manually — everything else renders automatically.
-    static readonly string[] _manualFields = { "HeightMapPreviewTexture", "ComplexGeometry", "m_Script" };
+    static readonly string[] _manualFields = { "HeightMapPreviewTexture", "GeneratedMap", "AdvancedNoise", "m_Script" };
     static readonly string[] _noiseFields = { "Octaves", "Persistence", "Lacunarity", "LoD" };
 
-    SerializedProperty _complexGeometry;
+    SerializedProperty _advancedNoise;
     SerializedProperty _previewTexture;
 
     GUIStyle _headerStyle;
@@ -18,7 +16,7 @@ public class MapControllerEditor : Editor
 
     void OnEnable()
     {
-        _complexGeometry = serializedObject.FindProperty("ComplexGeometry");
+        _advancedNoise = serializedObject.FindProperty("AdvancedNoise");
         _previewTexture = serializedObject.FindProperty("HeightMapPreviewTexture");
     }
 
@@ -49,40 +47,33 @@ public class MapControllerEditor : Editor
 
         var ctrl = (MapController)target;
 
-        // ── All fields except manually-controlled ones ────────────────────────
-        // New fields you add to MapController will appear here automatically,
-        // respecting their [Header], [Range], and other attributes as normal.
         var excludes = CombineArrays(_manualFields, _noiseFields);
-
         DrawPropertiesExcluding(serializedObject, excludes);
 
-        // ── ComplexGeometry toggle + conditional noise block ─────────────────
         EditorGUILayout.Space(4);
-        EditorGUILayout.PropertyField(_complexGeometry);
+        EditorGUILayout.PropertyField(_advancedNoise);
 
-        if (_complexGeometry.boolValue)
+        if (_advancedNoise.boolValue)
         {
             EditorGUILayout.Space(6);
-            SectionHeader("〰  Noise Settings");
+            SectionHeader("Noise Settings");
             EditorGUI.indentLevel++;
             foreach (var name in _noiseFields)
                 EditorGUILayout.PropertyField(serializedObject.FindProperty(name));
             EditorGUI.indentLevel--;
         }
 
-        // ── Generate button ───────────────────────────────────────────────────
         EditorGUILayout.Space(10);
         using (new EditorGUILayout.HorizontalScope())
         {
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("▶  Generate Terrain", GUILayout.Height(30), GUILayout.Width(200)))
+            if (GUILayout.Button("Generate Terrain", GUILayout.Height(30), GUILayout.Width(200)))
                 ctrl.GenerateMap();
             GUILayout.FlexibleSpace();
         }
 
-        // ── Preview ───────────────────────────────────────────────────────────
         EditorGUILayout.Space(10);
-        SectionHeader("🗺  Height Map Preview");
+        SectionHeader("Height Map Preview");
 
         var tex = _previewTexture.objectReferenceValue as Texture2D;
 
@@ -95,7 +86,7 @@ public class MapControllerEditor : Editor
 
             EditorGUI.DrawRect(previewRect, new Color(0.08f, 0.08f, 0.08f));
             EditorGUI.DrawPreviewTexture(previewRect, tex, null, ScaleMode.ScaleToFit);
-            EditorGUILayout.LabelField($"{tex.width} × {tex.height} px", _previewLabelStyle);
+            EditorGUILayout.LabelField($"{tex.width} x {tex.height} px", _previewLabelStyle);
         }
         else
         {
@@ -103,7 +94,7 @@ public class MapControllerEditor : Editor
             Rect r = GUILayoutUtility.GetRect(size, Mathf.Min(size, 256f),
                               GUILayout.ExpandWidth(true), GUILayout.Height(Mathf.Min(size, 256f)));
             EditorGUI.DrawRect(r, new Color(0.1f, 0.1f, 0.1f));
-            GUI.Label(r, "No preview — click Generate Terrain", _previewLabelStyle);
+            GUI.Label(r, "No preview yet - edit a value to trigger one", _previewLabelStyle);
         }
 
         EditorGUILayout.Space(6);
