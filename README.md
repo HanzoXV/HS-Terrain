@@ -1,4 +1,5 @@
-# Procedural Terrain Generation Framework
+# HS-Terrain
+(Head-start terrain, to give you a head-start)
 
 A modular, editor-driven procedural terrain generation system built for Unity. This framework uses a decoupled Bilinear Sampling Chunk Mesh Pipeline to dynamically generate seamless 3D terrain grids directly within the Unity Editor.
 
