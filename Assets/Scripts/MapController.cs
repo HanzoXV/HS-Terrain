@@ -5,7 +5,6 @@ public class MapController : MonoBehaviour
     [Header("General Settings")]
     [Range(0, 10000)] public int Seed = 1337;
     [Range(1, 100)] public float Scale = 12f;
-    public bool AutoUpdate = false;
     public bool AdvancedNoise = false;
 
     [Header("Chunk Settings")]
@@ -22,9 +21,9 @@ public class MapController : MonoBehaviour
     [Range(0f, 1f)] public float MountainThreshold = 0.45f;
 
     [Header("Noise Settings")]
-    [Range(1, 8)] public int Octaves = 7;
-    [Range(0, 1)] public float Persistence = 0.5f;
-    [Range(1, 4)] public float Lacunarity = 2f;
+    [Range(1, 16)] public int Octaves = 7;
+    [Range(0, 4)] public float Persistence = 0.5f;
+    [Range(1, 8)] public float Lacunarity = 2f;
     [Range(0, 6)] public int LoD = 2;
 
     [HideInInspector] public Texture2D HeightMapPreviewTexture;
@@ -40,41 +39,10 @@ public class MapController : MonoBehaviour
         GeneratedMap = _mapGenerator.Create(BuildVariables());
     }
 
-    public void UpdateMap()
-    {
-        if (GeneratedMap == null) { GenerateMap(); return; }
-        _mapGenerator.UpdateChunks(GeneratedMap, BuildVariables());
-    }
-
     public void GeneratePreview()
     {
         HeightMapPreviewTexture = _mapGenerator.GeneratePreview(BuildVariables());
     }
-
-#if UNITY_EDITOR
-    private double _lastChangeTime;
-    private bool _callbackRegistered;
-    private const double DebounceSeconds = 0.4;
-
-    private void ScheduleRefresh()
-    {
-        _lastChangeTime = UnityEditor.EditorApplication.timeSinceStartup;
-        if (_callbackRegistered) return;
-        _callbackRegistered = true;
-        UnityEditor.EditorApplication.update += OnEditorUpdate;
-    }
-
-    private void OnEditorUpdate()
-    {
-        if (UnityEditor.EditorApplication.timeSinceStartup - _lastChangeTime < DebounceSeconds) return;
-        UnityEditor.EditorApplication.update -= OnEditorUpdate;
-        _callbackRegistered = false;
-        if (this == null) return;
-        GeneratePreview();
-        if (AutoUpdate && GeneratedMap != null)
-            UpdateMap();
-    }
-#endif
 
     private void OnValidate()
     {
@@ -82,7 +50,11 @@ public class MapController : MonoBehaviour
             _mapGenerator = new MapGenerator();
 
 #if UNITY_EDITOR
-        ScheduleRefresh();
+        UnityEditor.EditorApplication.delayCall += () =>
+        {
+            if (this == null) return;
+            GeneratePreview();
+        };
 #endif
     }
 
