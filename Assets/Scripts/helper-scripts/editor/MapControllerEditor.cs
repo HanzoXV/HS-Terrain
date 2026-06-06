@@ -47,8 +47,7 @@ public class MapControllerEditor : Editor
 
         var ctrl = (MapController)target;
 
-        var excludes = CombineArrays(_manualFields, _noiseFields);
-        DrawPropertiesExcluding(serializedObject, excludes);
+        DrawPropertiesExcluding(serializedObject, CombineArrays(_manualFields, _noiseFields));
 
         EditorGUILayout.Space(4);
         EditorGUILayout.PropertyField(_advancedNoise);

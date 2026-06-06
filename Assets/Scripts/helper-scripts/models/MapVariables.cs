@@ -15,11 +15,15 @@ public class MapVariables
     public float HeightMultiplier;
     public bool ComplexMountains;
     public float MountainThreshold;
+    public bool UseContinentMask;
+    public float OceanThreshold;
+    public float WarpStrength;
 
     public MapVariables(int seed, float scale, int octaves, float persistence, float lacunarity,
                         int chunkX, int chunkY, int lod, float chunkScale,
                         AnimationCurve heightCurve, float heightMultiplier,
-                        bool complexMountains, float mountainThreshold)
+                        bool complexMountains, float mountainThreshold,
+                        bool useContinentMask, float oceanThreshold, float warpStrength)
     {
         Seed = seed;
         Scale = scale;
@@ -34,5 +38,8 @@ public class MapVariables
         HeightMultiplier = heightMultiplier;
         ComplexMountains = complexMountains;
         MountainThreshold = mountainThreshold;
+        UseContinentMask = useContinentMask;
+        OceanThreshold = oceanThreshold;
+        WarpStrength = warpStrength;
     }
 }

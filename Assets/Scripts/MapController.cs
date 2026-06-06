@@ -13,17 +13,22 @@ public class MapController : MonoBehaviour
     [Range(1, 500)] public float ChunkScale = 200f;
 
     [Header("Height Settings")]
-    public AnimationCurve HeightCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    public AnimationCurve HeightCurve = AnimationCurve.EaseInOut(-1f, -0.3f, 1f, 1f);
     [Range(1, 500)] public float HeightMultiplier = 120f;
 
     [Header("Mountain Settings")]
     public bool ComplexMountains = true;
-    [Range(0f, 1f)] public float MountainThreshold = 0.45f;
+    [Range(0f, 1f)] public float MountainThreshold = 0.62f;
+    [Range(0f, 5f)] public float WarpStrength = 1.5f;
+
+    [Header("World Settings")]
+    public bool UseContinentMask = true;
+    [Range(0f, 1f)] public float OceanThreshold = 0.35f;
 
     [Header("Noise Settings")]
-    [Range(1, 16)] public int Octaves = 7;
-    [Range(0, 4)] public float Persistence = 0.5f;
-    [Range(1, 8)] public float Lacunarity = 2f;
+    [Range(1, 8)] public int Octaves = 6;
+    [Range(0, 1)] public float Persistence = 0.38f;
+    [Range(1, 4)] public float Lacunarity = 2f;
     [Range(0, 6)] public int LoD = 2;
 
     [HideInInspector] public Texture2D HeightMapPreviewTexture;
@@ -62,5 +67,6 @@ public class MapController : MonoBehaviour
         new MapVariables(Seed, Scale, Octaves, Persistence, Lacunarity,
                          ChunkX, ChunkY, LoD, ChunkScale,
                          HeightCurve, HeightMultiplier,
-                         ComplexMountains, MountainThreshold);
+                         ComplexMountains, MountainThreshold,
+                         UseContinentMask, OceanThreshold, WarpStrength);
 }
